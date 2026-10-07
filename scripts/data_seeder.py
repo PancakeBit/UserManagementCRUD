@@ -27,7 +27,7 @@ seed_data = {
         "Robert",
         "Ashley",
         "William",
-        "Olivia"
+        "Olivia",
     ],
     "last_names": [
         "Dela Cruz",
@@ -49,14 +49,9 @@ seed_data = {
         "Davis",
         "Wilson",
         "Moore",
-        "Taylor"
+        "Taylor",
     ],
-    "email_domains": [
-        "gmail.com",
-        "yahoo.com",
-        "outlook.com",
-        "example.com"
-    ]
+    "email_domains": ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com"],
 }
 
 
