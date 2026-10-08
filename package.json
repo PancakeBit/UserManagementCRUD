@@ -1,0 +1,17 @@
+{
+  "name": "user-management",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "setup": "node scripts/ensure-deps.mjs",
+    "start": "npm run dev",
+    "predev": "node scripts/ensure-deps.mjs",
+    "dev": "concurrently -k -n api,web -c blue,magenta \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  },
+  "overrides": {
+    "shell-quote": "^1.11.0"
+  }
+}
