@@ -1,42 +1,45 @@
 import { HttpError } from '../utils/HttpError.js';
+import { isPositiveIntString } from "./common.js";
+import { FIELD_NAMES } from "../models/user.js";
 
-export const TEXT_FIELDS = ['name', 'username', 'email'];
-const ALLOWED_PARAMS = ['q', 'id', 'page', 'limit', ...TEXT_FIELDS];
+const ALLOWED_PARAMS = ['q', 'id', 'page', 'limit', ...FIELD_NAMES];
 const DEFAULT_PAGE = 1;
-const DEFAULT_LIMIT = 10;
+const DEFAULT_LIMIT = 50;
 export const MAX_LIMIT = 100;
 
 // Parses GET /api/users query params.
-// Absent params get defaults; present-but-invalid params are reported, never corrected.
+// Absent params get defaults, invalid params throw 400 with { param: message } details.
 // All problems are collected and thrown together as one 400 with { param: message } details.
 export function parseListQuery(query) {
-  const errors = {};
+  // Validate query params
+  const errors = Object.create(null);
 
   for (const key of Object.keys(query)) {
-    if (!ALLOWED_PARAMS.includes(key)) errors[key] = 'unknown query parameter';
+    if (!ALLOWED_PARAMS.includes(key)) errors[key] = "unknown query parameter";
   }
 
-  // Trimmed string, or undefined when absent/invalid (invalid also records an error).
+  // Returns the param's text, or undefined if it wasn't sent.
+  // Records an error (and returns undefined) if it was sent twice (?q=a&q=b) or is blank (?q=).
   function readString(key) {
     const value = query[key];
     if (value === undefined) return undefined;
-    if (typeof value !== 'string') {
-      errors[key] = 'must be given at most once';
+    if (typeof value !== "string") {
+      errors[key] = "must be given at most once";
       return undefined;
     }
-    const trimmed = value.trim();
-    if (trimmed === '') {
-      errors[key] = 'must not be empty';
+    const withoutOuterSpaces = value.trim();
+    if (withoutOuterSpaces === "") {
+      errors[key] = "must not be empty";
       return undefined;
     }
-    return trimmed;
+    return withoutOuterSpaces;
   }
 
   function readPositiveInt(key, max) {
     const raw = readString(key);
     if (raw === undefined) return undefined;
-    if (!/^[1-9]\d*$/.test(raw)) {
-      errors[key] = 'must be a positive integer';
+    if (!isPositiveIntString(raw)) {
+      errors[key] = "must be a positive integer";
       return undefined;
     }
     const n = Number(raw);
@@ -47,16 +50,17 @@ export function parseListQuery(query) {
     return n;
   }
 
-  const page = readPositiveInt('page') ?? DEFAULT_PAGE;
-  const limit = readPositiveInt('limit', MAX_LIMIT) ?? DEFAULT_LIMIT;
-  const id = readPositiveInt('id');
-  const q = readString('q')?.toLowerCase();
-  const fieldFilters = TEXT_FIELDS
-    .map((field) => [field, readString(field)?.toLowerCase()])
-    .filter(([, term]) => term !== undefined);
+  const page = readPositiveInt("page") ?? DEFAULT_PAGE;
+  const limit = readPositiveInt("limit", MAX_LIMIT) ?? DEFAULT_LIMIT;
+  const id = readPositiveInt("id");
+  const q = readString("q")?.toLowerCase();
+  const fieldFilters = FIELD_NAMES.map((field) => [
+    field,
+    readString(field)?.toLowerCase(),
+  ]).filter(([, term]) => term !== undefined);
 
   if (Object.keys(errors).length > 0) {
-    throw new HttpError(400, 'Invalid query parameters', errors);
+    throw new HttpError(400, "Invalid query parameters", errors);
   }
 
   return { page, limit, id, q, fieldFilters };
