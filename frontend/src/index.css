@@ -1,1 +1,83 @@
 @import "tailwindcss";
+
+/* Every colour and face comes from .design-identity.md (a library card-catalogue drawer):
+   oak drawer behind, manila cards in front, typewriter ink, a green guide tab as the accent
+   and oxblood kept for delete and errors. Tailwind's default palette is removed so no
+   colour outside these five can slip in. */
+@theme {
+  --color-*: initial;
+  --color-bg: oklch(0.82 0.05 72);
+  --color-surface: oklch(0.91 0.055 92);
+  --color-ink: oklch(0.24 0.02 60);
+  --color-accent: oklch(0.42 0.085 165);
+  --color-accent2: oklch(0.45 0.12 25);
+
+  --font-*: initial;
+  --font-display: "Cutive Mono", ui-monospace, monospace;
+  --font-sans: "Work Sans Variable", ui-sans-serif, sans-serif;
+  --font-mono: "Cutive Mono", ui-monospace, monospace;
+
+  /* Type scale: 16px base, ratio 1.25 */
+  --text-sm: 0.8rem;
+  --text-base: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5625rem;
+  --text-2xl: 1.953rem;
+}
+
+@layer base {
+  body {
+    @apply bg-bg font-sans text-ink antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent;
+  }
+}
+
+/* Signature: the engraved label plate on the drawer front. A ruled double frame,
+   with a screw head in each top corner. */
+.label-plate {
+  position: relative;
+  border: 1px solid var(--color-ink);
+  box-shadow:
+    inset 0 0 0 3px var(--color-surface),
+    inset 0 0 0 4px color-mix(in oklab, var(--color-ink) 40%, transparent);
+}
+
+.label-plate::before,
+.label-plate::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--color-ink) 55%, transparent);
+}
+
+.label-plate::before {
+  left: 8px;
+}
+
+.label-plate::after {
+  right: 8px;
+}
+
+/* Motion law: a dialog slides up a short way, like a card pulled from the drawer. Nothing else moves. */
+dialog[open].card-pull {
+  animation: card-pull 160ms ease-out;
+}
+
+@keyframes card-pull {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog[open].card-pull {
+    animation: none;
+  }
+}
