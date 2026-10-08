@@ -1,5 +1,7 @@
 const BASE = '/api/users';
-export const PAGE_SIZE = 10;
+// Choices for "per page". The backend caps limit at 100.
+export const PAGE_SIZES = [10, 25, 50, 100];
+export const PAGE_SIZE = PAGE_SIZES[0];
 
 // Carries the HTTP status and the server's per-field `details`, so callers can
 // tell "username is already taken" (409) apart from "user not found" (404).
@@ -41,10 +43,13 @@ async function request(url, { body, ...options } = {}) {
 }
 
 // Resolves to { data, page, limit, total, totalPages }.
-export function listUsers({ q, page = 1, limit = PAGE_SIZE, signal } = {}) {
+// `filters` holds any of q (any field), id (exact), name, username, email (contains).
+export function listUsers({ filters = {}, page = 1, limit = PAGE_SIZE, signal } = {}) {
   const params = new URLSearchParams({ page, limit });
-  // The backend rejects an empty ?q=, so only send it when there is something to search.
-  if (q) params.set('q', q);
+  // The backend rejects empty params (?name=), so only send the ones that have a value.
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) params.set(key, value);
+  }
   return request(`${BASE}?${params}`, { signal });
 }
 

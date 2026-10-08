@@ -1,3 +1,6 @@
+import { useId } from 'react';
+import { PAGE_SIZES } from '../api/usersApi.js';
+
 // Which page numbers to show: always the first and last, the current page and its
 // neighbours, and '…' where pages are skipped. 15 pages, on 7 → 1 … 6 7 8 … 15
 export function pageWindow(current, totalPages) {
@@ -11,7 +14,11 @@ export function pageWindow(current, totalPages) {
   return pages;
 }
 
-export default function Pagination({ page, totalPages, total, limit, onPageChange }) {
+// `limit` is the page size the shown page was fetched with; `pageSize` is the one chosen in
+// the select. They differ only while a new page size is loading.
+// Rendered above and below the table; `position` sets which edge gets the rule and the nav's name.
+export default function Pagination({ position, page, totalPages, total, limit, onPageChange, pageSize, onPageSizeChange }) {
+  const sizeId = useId();
   if (total === 0) return null;
 
   const first = (page - 1) * limit + 1;
@@ -19,13 +26,30 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
 
   return (
     <nav
-      aria-label="Pagination"
-      className="flex flex-col items-center justify-between gap-3 border-t border-ink/15 px-4 py-4 text-sm sm:flex-row sm:px-6"
+      aria-label={position === 'top' ? 'Pagination, top' : 'Pagination, bottom'}
+      className={`flex flex-col items-center justify-between gap-3 border-ink/15 px-4 py-4 text-sm sm:flex-row sm:px-6 ${
+        position === 'top' ? 'border-b' : 'border-t'
+      }`}
     >
-      <p>
-        Showing <span className="font-display">{first}–{last}</span> of{' '}
-        <span className="font-display">{total}</span>
-      </p>
+      <div className="flex items-center gap-4">
+        <p>
+          Showing <span className="font-display">{first}–{last}</span> of{' '}
+          <span className="font-display">{total}</span>
+        </p>
+        <p className="flex items-center gap-2">
+          <label htmlFor={sizeId}>Per page</label>
+          <select
+            id={sizeId}
+            value={pageSize}
+            onChange={(event) => onPageSizeChange(Number(event.target.value))}
+            className="rounded-sm border border-ink/30 bg-surface px-2 py-1 font-display outline-none focus:border-accent"
+          >
+            {PAGE_SIZES.map((size) => (
+              <option key={size} value={size}>{size}</option>
+            ))}
+          </select>
+        </p>
+      </div>
 
       {totalPages > 1 && (
         <ol className="flex items-center gap-1 font-display">

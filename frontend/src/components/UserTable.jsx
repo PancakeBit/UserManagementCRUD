@@ -1,12 +1,25 @@
 import UserRow from './UserRow.jsx';
 import Button from './Button.jsx';
-import { PAGE_SIZE } from '../api/usersApi.js';
-
 const COLUMNS = 5;
+
+const FILTER_LABELS = { id: 'No.', name: 'Name', username: 'Username', email: 'Email' };
+
+// The active search and filters in words, for the empty state: “ana”, Name “silva”, No. 12
+function describeFilters(filters) {
+  return Object.entries(filters)
+    .filter(([, value]) => value)
+    .map(([field, value]) => {
+      if (field === 'q') return `“${value}”`;
+      if (field === 'id') return `No. ${value}`;
+      return `${FILTER_LABELS[field]} “${value}”`;
+    })
+    .join(', ');
+}
 
 // Shows exactly one of: skeleton (first load), error, empty, or the rows.
 // On later loads the previous rows stay visible, dimmed, until the new page arrives.
-export default function UserTable({ users, status, error, query, onRetry, onClearSearch, onEdit, onDelete }) {
+export default function UserTable({ users, status, error, filters, skeletonRows, onRetry, onClearSearch, onEdit, onDelete }) {
+  const filterText = describeFilters(filters);
   const firstLoad = users === null && status === 'loading';
   const refreshing = users !== null && status === 'loading';
 
@@ -33,12 +46,12 @@ export default function UserTable({ users, status, error, query, onRetry, onClea
               </Button>
             </MessageRow>
           ) : firstLoad ? (
-            <SkeletonRows />
+            <SkeletonRows count={skeletonRows} />
           ) : users.length === 0 ? (
             <MessageRow>
-              {query ? (
+              {filterText ? (
                 <>
-                  <p>No cards filed under “{query}”.</p>
+                  <p>No cards filed under {filterText}.</p>
                   <Button onClick={onClearSearch} className="mt-4 text-accent">
                     Clear search
                   </Button>
@@ -67,8 +80,8 @@ function MessageRow({ children }) {
 }
 
 // Placeholder rows the same height as real ones, so nothing shifts when data arrives.
-function SkeletonRows() {
-  return Array.from({ length: PAGE_SIZE }, (_, i) => (
+function SkeletonRows({ count }) {
+  return Array.from({ length: count }, (_, i) => (
     <tr key={i} className="border-t border-ink/15" aria-hidden="true">
       <td colSpan={COLUMNS} className="px-4 py-3 sm:px-6">
         <div className="h-6 rounded-sm bg-ink/10" />
