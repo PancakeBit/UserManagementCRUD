@@ -18,7 +18,7 @@ function describeFilters(filters) {
 
 // Shows exactly one of: skeleton (first load), error, empty, or the rows.
 // On later loads the previous rows stay visible, dimmed, until the new page arrives.
-export default function UserTable({ users, status, error, filters, skeletonRows, onRetry, onClearSearch, onEdit, onDelete }) {
+export default function UserTable({ users, status, error, filters, skeletonRows, onRetry, onClearSearch, onView, onEdit, onDelete, busyUserId }) {
   const filterText = describeFilters(filters);
   const firstLoad = users === null && status === 'loading';
   const refreshing = users !== null && status === 'loading';
@@ -52,7 +52,7 @@ export default function UserTable({ users, status, error, filters, skeletonRows,
               {filterText ? (
                 <>
                   <p>No cards filed under {filterText}.</p>
-                  <Button onClick={onClearSearch} className="mt-4 text-accent">
+                  <Button variant="quietAccent" onClick={onClearSearch} className="mt-4">
                     Clear search
                   </Button>
                 </>
@@ -61,7 +61,16 @@ export default function UserTable({ users, status, error, filters, skeletonRows,
               )}
             </MessageRow>
           ) : (
-            users.map((user) => <UserRow key={user.id} user={user} onEdit={onEdit} onDelete={onDelete} />)
+            users.map((user) => (
+              <UserRow
+                key={user.id}
+                user={user}
+                busy={user.id === busyUserId}
+                onView={onView}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
+            ))
           )}
         </tbody>
       </table>

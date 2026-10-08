@@ -2,6 +2,8 @@ const VARIANTS = {
   primary: 'bg-accent text-surface hover:bg-accent/90',
   danger: 'bg-accent2 text-surface hover:bg-accent2/90',
   quiet: 'text-ink hover:bg-ink/10',
+  quietAccent: 'text-accent hover:bg-accent/10',
+  quietDanger: 'text-accent2 hover:bg-accent2/10',
 };
 
 // The one button style for the app. `variant` picks the colour; everything else is passed through.

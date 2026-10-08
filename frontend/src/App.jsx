@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createUser, deleteUser, updateUser, PAGE_SIZE } from './api/usersApi.js';
+import { createUser, deleteUser, getUser, updateUser, PAGE_SIZE } from './api/usersApi.js';
 import { useDebouncedValue } from './hooks/useDebouncedValue.js';
 import { useUsersQuery } from './hooks/useUsersQuery.js';
 import { useToast } from './hooks/useToasts.jsx';
@@ -8,6 +8,7 @@ import UserTable from './components/UserTable.jsx';
 import Pagination from './components/Pagination.jsx';
 import UserFormDialog from './components/UserFormDialog.jsx';
 import ConfirmDeleteDialog from './components/ConfirmDeleteDialog.jsx';
+import UserDetailsDialog from './components/UserDetailsDialog.jsx';
 
 const SEARCH_DELAY_MS = 300;
 
@@ -49,15 +50,58 @@ export default function App() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null); // null while the form creates
   const [deletingUser, setDeletingUser] = useState(null);
+  const [viewingUser, setViewingUser] = useState(null);
+  const [loadingUserId, setLoadingUserId] = useState(null); // row whose user is being fetched
+
+  // Loads the user's saved copy with GET /api/users/:id before a dialog opens, so neither
+  // the details nor the edit form ever shows stale list data. Returns null (after saying why)
+  // when the user can't be loaded.
+  async function fetchCurrentUser(rowUser) {
+    setLoadingUserId(rowUser.id);
+    try {
+      const user = await getUser(rowUser.id);
+      // Changed since the list loaded (e.g. in another tab): bring the list up to date too.
+      if (['name', 'username', 'email'].some((field) => user[field] !== rowUser[field])) refetch();
+      return user;
+    } catch (err) {
+      if (err.status === 404) {
+        // Deleted since the list loaded.
+        showToast(`${rowUser.name} no longer exists`, 'error');
+        refetch();
+      } else {
+        showToast(err.message, 'error');
+      }
+      return null;
+    } finally {
+      setLoadingUserId(null);
+    }
+  }
 
   function openCreate() {
     setEditingUser(null);
     setFormOpen(true);
   }
 
-  function openEdit(user) {
+  // `user` must already be fresh: the details dialog passes the copy it just loaded.
+  function openEditFor(user) {
+    setViewingUser(null);
     setEditingUser(user);
     setFormOpen(true);
+  }
+
+  async function openEdit(rowUser) {
+    const user = await fetchCurrentUser(rowUser);
+    if (user) openEditFor(user);
+  }
+
+  async function openDetails(rowUser) {
+    const user = await fetchCurrentUser(rowUser);
+    if (user) setViewingUser(user);
+  }
+
+  function openDeleteFromDetails(user) {
+    setViewingUser(null);
+    setDeletingUser(user);
   }
 
   // Errors not handled here are re-thrown so the form can show them on its fields.
@@ -135,8 +179,10 @@ export default function App() {
           skeletonRows={limit}
           onRetry={handleRetry}
           onClearSearch={() => setSearch(EMPTY_SEARCH)}
+          onView={openDetails}
           onEdit={openEdit}
           onDelete={setDeletingUser}
+          busyUserId={loadingUserId}
         />
         {pager('bottom')}
       </section>
@@ -146,6 +192,12 @@ export default function App() {
         user={editingUser}
         onClose={() => setFormOpen(false)}
         onSubmit={handleSave}
+      />
+      <UserDetailsDialog
+        user={viewingUser}
+        onClose={() => setViewingUser(null)}
+        onEdit={openEditFor}
+        onDelete={openDeleteFromDetails}
       />
       <ConfirmDeleteDialog
         user={deletingUser}
